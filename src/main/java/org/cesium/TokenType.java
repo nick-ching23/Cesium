@@ -1,4 +1,15 @@
 package org.cesium;
 
-public class TokenType {
+public enum TokenType{
+    KEYWORD,
+    IDENTIFIER,
+    NUMERIC_LITERAL,
+    STRING_LITERAL,
+    BOOLEAN_LITERAL,
+    OPERATOR,
+    DELIMITER,
+    COMMENT,
+    WHITESPACE,
+    UNKNOWN
 }
+
