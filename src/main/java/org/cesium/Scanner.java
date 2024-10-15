@@ -11,6 +11,7 @@ public class Scanner {
     private int sourceCodeLength;
     private static final Set<String> KEYWORDS = new HashSet<>();
 
+    // defines keywords for this language
     static {
         KEYWORDS.add("Stream");
         KEYWORDS.add("Reactive");
@@ -22,6 +23,8 @@ public class Scanner {
         KEYWORDS.add("reactive");
     }
 
+    // given source code, we identify position. This allows iterating through source code
+    // to identify tokens
     public Scanner(String sourceCode) {
         this.sourceCode = sourceCode;
         this.sourceCodeLength = sourceCode.length();
@@ -56,6 +59,13 @@ public class Scanner {
                 tokens.add(scanStringLiteral());
             } else if (isOperator(currentChar)) {
                 tokens.add(scanOperator());
+            } else if (isDelimiter(currentChar)) {
+                tokens.add(new Token(TokenType.DELIMITER, Character.toString(currentChar)));
+                currPosition++;
+            } else {
+                // Lexical Error
+                tokens.add(new Token(TokenType.UNKNOWN, Character.toString(currentChar)));
+                currPosition++;
             }
 
 
@@ -64,7 +74,6 @@ public class Scanner {
 
         return tokens;
     }
-
 
     // Helper Methods for identifying char type
     private boolean isLetter(char c) {
@@ -80,7 +89,7 @@ public class Scanner {
     }
 
     private boolean isDelimiter(char ch) {
-        return "()[]{};,".indexOf(ch) != -1;
+        return "()[]{};,.".indexOf(ch) != -1;
     }
 
     private boolean isOperator(char c) {
@@ -135,6 +144,9 @@ public class Scanner {
         }
     }
 
+    /*
+     * Tokenizes any identifiers or keywords
+     */
     private Token scanIdentifierOrKeyword() {
         StringBuilder word = new StringBuilder();
         int state = 0; // State 0: starting state of FSM | State 1: identifying keyword/identifier
@@ -166,6 +178,9 @@ public class Scanner {
         }
     }
 
+    /*
+     * Tokenizes any numeric literals
+     */
     private Token scanNumericLiteral() {
         StringBuilder word = new StringBuilder();
         int state = 0; // State 0: starting state of FSM | State 1: identifying integers | State 2: floats
@@ -201,6 +216,9 @@ public class Scanner {
         return new Token(TokenType.NUMERIC_LITERAL, word.toString());
     }
 
+    /*
+     * Tokenizes any string literals
+     */
     private Token scanStringLiteral() {
         StringBuilder word = new StringBuilder();
         currPosition++; // Skip opening quotation mark
@@ -222,7 +240,9 @@ public class Scanner {
         return new Token(TokenType.UNKNOWN, word.toString());
     }
 
-
+    /*
+     * Tokenizes any operators
+     */
     private Token scanOperator() {
         StringBuilder word = new StringBuilder();
         word.append(sourceCode.charAt(currPosition));

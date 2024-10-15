@@ -7,7 +7,7 @@ import java.util.List;
 public class Main {
     public static void main(String[] args) {
 
-        String inputProgram = "print \"Hello, World!\" + return || true <= 4.0";
+        String inputProgram = "print \"Hello, World!\" + return || true <= 4.0 Reactive { x > 10 }";
 
         Scanner scanner = new Scanner(inputProgram);
         List<Token> results = scanner.scanSourceCode();
