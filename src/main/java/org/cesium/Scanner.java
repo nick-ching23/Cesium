@@ -54,7 +54,9 @@ public class Scanner {
             else if (isDigit(currentChar)) {
                 tokens.add(scanNumericLiteral());
             }
-
+            else if (currentChar == '"') {
+                tokens.add(scanStringLiteral());
+            }
 
 
         }
@@ -191,8 +193,28 @@ public class Scanner {
                 break;
             }
         }
-
         return new Token(TokenType.NUMERIC_LITERAL, word.toString());
+    }
+
+    private Token scanStringLiteral() {
+        StringBuilder word = new StringBuilder();
+        currPosition++; // Skip opening quotation mark
+
+        while (currPosition < sourceCodeLength) {
+            char currentChar = sourceCode.charAt(currPosition);
+
+            if (currentChar == '"') {
+                currPosition++; // skip closing quotation mark
+                return new Token(TokenType.STRING_LITERAL, word.toString());
+            } else {
+                word.append(currentChar);
+                currPosition++;
+            }
+        }
+
+        // if there is no closing "" mark. then the rest of the source code will be interpreted
+        // as a single token. this is obviously unknown and a grammar error.
+        return new Token(TokenType.UNKNOWN, word.toString());
     }
 
 }
