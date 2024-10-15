@@ -1,0 +1,11 @@
+// Define streams with an invalid token
+Stream @invalidSensor;
+Stream validSensor;
+
+// If temperature goes above 30, notify user and print current state of stream
+Reactive{
+    if (validSensor > 30){
+        print("Stream detected change in input.");
+        print(validSensor);
+    }
+}

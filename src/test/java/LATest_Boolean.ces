@@ -1,0 +1,11 @@
+// Check the system status based on boolean flags
+Reactive systemStatus;
+
+if (systemOn && powerAvailable) {
+    systemStatus = true;
+} else {
+    systemStatus = false;
+}
+
+// Print the system status
+print(systemStatus);

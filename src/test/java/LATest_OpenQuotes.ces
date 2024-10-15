@@ -1,0 +1,13 @@
+// Define streams for financial data
+Stream stockPriceStream;
+Stream volumeStream;
+
+// Assign data to the financial streams
+stockPriceStream = Reactive{"stockPrice};
+volumeStream = Reactive{"tradingVolume"};
+
+// Calculate the average stock price over 10 minutes
+Reactive avgStockPrice = stockPriceStream.interval(10).average();
+
+// Print the result (should throw an error due to unclosed string above)
+print(avgStockPrice);

@@ -1,0 +1,10 @@
+// Compute the heat index based on temperature and humidity
+Reactive heatIndex;
+
+if (temperature > 30 && humidity > 60) {
+    heatIndex = (temperature + humidity) / 2;
+} else {
+    heatIndex = 25;
+}
+
+print(heatIndex);

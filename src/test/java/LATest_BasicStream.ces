@@ -1,0 +1,11 @@
+// Define two streams
+Stream tempSensor;
+Stream pressureSensor;
+
+// Assign sensor data
+tempSensor = readSensor("temperature");
+pressureSensor = readSensor("pressure");
+
+// Print the values
+print(tempSensor);
+print(pressureSensor);
