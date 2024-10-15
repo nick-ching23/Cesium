@@ -9,6 +9,7 @@ public class Scanner {
     private String sourceCode;
     private int currPosition;
     private int sourceCodeLength;
+    private int line = 1;
     private static final Set<String> KEYWORDS = new HashSet<>();
 
     // defines keywords for this language
@@ -36,7 +37,7 @@ public class Scanner {
      * tokenize the source code. Each token will represent specific parts of the
      * lexical grammar of our programming language defined in the README
      */
-    public List<Token> scanSourceCode() {
+    public List<Token> scanSourceCode() throws LexicalException {
         List<Token> tokens = new ArrayList<>(); // will hold list of tokens
 
         while (currPosition < sourceCodeLength) {
@@ -44,7 +45,7 @@ public class Scanner {
 
             // skip over single line and multi-line comments
             if (isWhitespace(currentChar)) {
-                currPosition++;
+                skipWhitespace();
             } else if (currentChar == '/') {
                 if (lookAhead(1) == '/') {
                     skipSingleLineComment();
@@ -60,20 +61,33 @@ public class Scanner {
             } else if (isOperator(currentChar)) {
                 tokens.add(scanOperator());
             } else if (isDelimiter(currentChar)) {
-                tokens.add(new Token(TokenType.DELIMITER, Character.toString(currentChar)));
-                currPosition++;
+
+                if (!isInvalidTokenAfterDelimiter()) {
+                    tokens.add(new Token(TokenType.DELIMITER, Character.toString(currentChar)));
+                    currPosition++;
+                }
+                else {
+                    throw new LexicalException("Invalid numeric literal ending with a dot at line " + line);
+                }
             } else {
                 // Lexical Error
-                tokens.add(new Token(TokenType.UNKNOWN, Character.toString(currentChar)));
-                currPosition++;
-                System.out.println("Unrecognzied Token");
+                throw new LexicalException("Unrecognized token '" + currentChar + "' at line " + line);
             }
-
 
         }
 
 
         return tokens;
+    }
+
+    // allows us to keep track of what line we are on for potential error handling
+    private void skipWhitespace() {
+        while (currPosition < sourceCodeLength && isWhitespace(sourceCode.charAt(currPosition))) {
+            if (sourceCode.charAt(currPosition) == '\n') {
+                line++;
+            }
+            currPosition++;
+        }
     }
 
     // Helper Methods for identifying char type
@@ -182,45 +196,40 @@ public class Scanner {
     /*
      * Tokenizes any numeric literals
      */
-    private Token scanNumericLiteral() {
+    private Token scanNumericLiteral() throws LexicalException {
         StringBuilder word = new StringBuilder();
-        int state = 0; // State 0: starting state of FSM | State 1: identifying integers | State 2: floats
+        boolean hasDot = false;
 
         while (currPosition < sourceCodeLength) {
             char currentChar = sourceCode.charAt(currPosition);
-
-            // start state
-            if (state == 0 && isDigit(currentChar)) {
-                word.append(currentChar);
-                currPosition++;
-                state = 1;
-            }
-            // state 1: handling integers
-            else if (state == 1 && isDigit(currentChar)) {
+            if (isDigit(currentChar)) {
                 word.append(currentChar);
                 currPosition++;
             }
-            // state 2: handling any numerical values with decimal points
-            else if (state == 1 && currentChar == '.') {
+            else if (currentChar == '.' && !hasDot) {
+                hasDot = true;
                 word.append(currentChar);
                 currPosition++;
-                state = 2;
             }
-            // state 2: now a float
-            else if (state == 2 && isDigit(currentChar)) {
-                word.append(currentChar);
-                currPosition++;
+            else if (currentChar == '.') {
+                throw new LexicalException("Invalid numeric literal with multiple dots at line " + line);
             } else {
                 break;
             }
         }
+
+        // Check if the numeric literal ends with a dot (e.g., "1.")
+        if (hasDot && word.charAt(word.length() - 1) == '.') {
+            throw new LexicalException("Invalid numeric literal ending with a dot at line " + line);
+        }
+
         return new Token(TokenType.NUMERIC_LITERAL, word.toString());
     }
 
     /*
      * Tokenizes any string literals
      */
-    private Token scanStringLiteral() {
+    private Token scanStringLiteral() throws LexicalException{
         StringBuilder word = new StringBuilder();
         currPosition++; // Skip opening quotation mark
 
@@ -238,7 +247,7 @@ public class Scanner {
 
         // if there is no closing "" mark. then the rest of the source code will be interpreted
         // as a single token. this is obviously unknown and a grammar error.
-        return new Token(TokenType.UNKNOWN, word.toString());
+        throw new LexicalException("Unterminated string literal at line " + line);
     }
 
     /*
@@ -258,5 +267,16 @@ public class Scanner {
             }
         }
         return new Token(TokenType.OPERATOR, word.toString());
+    }
+
+    // Checks we don't have a possible error like ".1"
+    private boolean isInvalidTokenAfterDelimiter() {
+        if (currPosition < sourceCodeLength) {
+            char currentChar = sourceCode.charAt(currPosition);
+            if (currentChar == '.' && isDigit(lookAhead(1))) {
+                return true;
+            }
+        }
+        return false;
     }
 }

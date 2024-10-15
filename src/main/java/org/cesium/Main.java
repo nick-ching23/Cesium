@@ -37,6 +37,10 @@ public class Main {
         } catch (IOException e) {
             System.err.println("Error reading file: " + fileName);
             e.printStackTrace();
+        } catch (LexicalException e) {
+            // Catch the lexical error and print the error message
+            System.err.println("Lexical Error: " + e.getMessage());
+            System.exit(1);  // Exit the program after a lexical error
         }
     }
 }
