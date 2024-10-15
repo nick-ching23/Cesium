@@ -51,7 +51,9 @@ public class Scanner {
             else if (isLetter(currentChar)) {
                 tokens.add(scanIdentifierOrKeyword());
             }
-
+            else if (isDigit(currentChar)) {
+                tokens.add(scanNumericLiteral());
+            }
 
 
 
@@ -138,12 +140,10 @@ public class Scanner {
                 word.append(currentChar);
                 currPosition++;
                 state = 1;
-            }
-            else if (state == 1 && (isLetter(currentChar) || isDigit(currentChar))) {
+            } else if (state == 1 && (isLetter(currentChar) || isDigit(currentChar))) {
                 word.append(currentChar);
                 currPosition++;
-            }
-            else {
+            } else {
                 break;
             }
         }
@@ -159,5 +159,40 @@ public class Scanner {
         }
     }
 
+    private Token scanNumericLiteral() {
+        StringBuilder word = new StringBuilder();
+        int state = 0; // State 0: starting state of FSM | State 1: identifying integers | State 2: floats
+
+        while (currPosition < sourceCodeLength) {
+            char currentChar = sourceCode.charAt(currPosition);
+
+            // start state
+            if (state == 0 && isDigit(currentChar)) {
+                word.append(currentChar);
+                currPosition++;
+                state = 1;
+            }
+            // state 1: handling integers
+            else if (state == 1 && isDigit(currentChar)) {
+                word.append(currentChar);
+                currPosition++;
+            }
+            // state 2: handling any numerical values with decimal points
+            else if (state == 1 && currentChar == '.') {
+                word.append(currentChar);
+                currPosition++;
+                state = 2;
+            }
+            // state 2: now a float
+            else if (state == 2 && isDigit(currentChar)) {
+                word.append(currentChar);
+                currPosition++;
+            } else {
+                break;
+            }
+        }
+
+        return new Token(TokenType.NUMERIC_LITERAL, word.toString());
+    }
 
 }

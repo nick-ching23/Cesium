@@ -7,7 +7,7 @@ import java.util.List;
 public class Main {
     public static void main(String[] args) {
 
-        Scanner scanner = new Scanner("for true return");
+        Scanner scanner = new Scanner("for true  411   return");
         List<Token> results = scanner.scanSourceCode();
 
         System.out.println(results);
