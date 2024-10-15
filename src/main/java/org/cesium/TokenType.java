@@ -8,8 +8,6 @@ public enum TokenType{
     BOOLEAN_LITERAL,
     OPERATOR,
     DELIMITER,
-    COMMENT,
-    WHITESPACE,
     UNKNOWN
 }
 

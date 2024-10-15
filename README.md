@@ -10,6 +10,5 @@
  -  BOOLEAN_LITERAL : Represents the boolean values true or false
  -  OPERATOR : Represents symbols that perform operations on operands {+, -, *, /, ==, =, !=, <, >, <=, >=, &&, ||, !, =}
  -  DELIMITER : Represents punctuation marks group expressions {(, ), [, ], {, }, ;, ,} 
- -  COMMENT : Represents text that is ignored or not tokenized in the compiler; signaled by symbols such as '//', '*/'
- -  WHITESPACE : Represents spaces, tabs or newline characters {"", \t, \n, \r}
  -  UNKNOWN : Represents unrecognized tokens or characters that do not match any valid TokenType
+ Whitespace and line comments are not tokenized by the compiler. Instead they are handled logically in order to build valid TokenTypes
