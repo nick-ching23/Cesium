@@ -10,6 +10,7 @@ public class Scanner {
     private int currPosition;
     private int sourceCodeLength;
     private static final Set<String> KEYWORDS = new HashSet<>();
+
     static {
         KEYWORDS.add("Stream");
         KEYWORDS.add("Reactive");
@@ -47,21 +48,18 @@ public class Scanner {
                 } else if (lookAhead(1) == '*') {
                     skipMultiLineComment();
                 }
-            }
-            else if (isLetter(currentChar)) {
+            } else if (isLetter(currentChar)) {
                 tokens.add(scanIdentifierOrKeyword());
-            }
-            else if (isDigit(currentChar)) {
+            } else if (isDigit(currentChar)) {
                 tokens.add(scanNumericLiteral());
-            }
-            else if (currentChar == '"') {
+            } else if (currentChar == '"') {
                 tokens.add(scanStringLiteral());
+            } else if (isOperator(currentChar)) {
+                tokens.add(scanOperator());
             }
 
 
         }
-
-
 
 
         return tokens;
@@ -87,6 +85,13 @@ public class Scanner {
 
     private boolean isOperator(char c) {
         return ("-+*=/<>|&!").indexOf(c) != -1;
+    }
+
+    // Helper method to check for multi-character operators
+    private boolean isMultipartOperator(char charOne, char charTwo) {
+        return (charOne == '=' && charTwo == '=') || (charOne == '!' && charTwo == '=')
+          || (charOne == '<' && charTwo == '=') || (charOne == '>' && charTwo == '=')
+          || (charOne == '&' && charTwo == '&') || (charOne == '|' && charTwo == '|');
     }
 
     private boolean isKeyword(String word) {
@@ -217,4 +222,20 @@ public class Scanner {
         return new Token(TokenType.UNKNOWN, word.toString());
     }
 
+
+    private Token scanOperator() {
+        StringBuilder word = new StringBuilder();
+        word.append(sourceCode.charAt(currPosition));
+        currPosition++;
+
+        // check if the code is multiline
+        if (currPosition < sourceCodeLength) {
+            char nextChar = sourceCode.charAt(currPosition);
+            if (isMultipartOperator(word.charAt(0), nextChar)) {
+                word.append(nextChar);
+                currPosition++;
+            }
+        }
+        return new Token(TokenType.OPERATOR, word.toString());
+    }
 }
