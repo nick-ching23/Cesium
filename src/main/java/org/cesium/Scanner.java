@@ -66,6 +66,7 @@ public class Scanner {
                 // Lexical Error
                 tokens.add(new Token(TokenType.UNKNOWN, Character.toString(currentChar)));
                 currPosition++;
+                System.out.println("Unrecognzied Token");
             }
 
 

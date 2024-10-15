@@ -4,7 +4,6 @@ import java.nio.file.Files;
 import java.util.List;
 import java.io.File;
 
-
 public class Main {
 
     /*
@@ -39,6 +38,5 @@ public class Main {
             System.err.println("Error reading file: " + fileName);
             e.printStackTrace();
         }
-
     }
 }
