@@ -1,12 +1,25 @@
 package org.cesium;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class Scanner {
     private String sourceCode;
     private int currPosition;
     private int sourceCodeLength;
+    private static final Set<String> KEYWORDS = new HashSet<>();
+    static {
+        KEYWORDS.add("Stream");
+        KEYWORDS.add("Reactive");
+        KEYWORDS.add("if");
+        KEYWORDS.add("else");
+        KEYWORDS.add("for");
+        KEYWORDS.add("return");
+        KEYWORDS.add("print");
+        KEYWORDS.add("reactive");
+    }
 
     public Scanner(String sourceCode) {
         this.sourceCode = sourceCode;
@@ -25,6 +38,7 @@ public class Scanner {
         while (currPosition < sourceCodeLength) {
             char currentChar = sourceCode.charAt(currPosition);
 
+            // skip over single line and multi-line comments
             if (isWhitespace(currentChar)) {
                 currPosition++;
             } else if (currentChar == '/') {
@@ -33,6 +47,9 @@ public class Scanner {
                 } else if (lookAhead(1) == '*') {
                     skipMultiLineComment();
                 }
+            }
+            else if (isLetter(currentChar)) {
+                tokens.add(scanIdentifierOrKeyword());
             }
 
 
@@ -66,6 +83,10 @@ public class Scanner {
 
     private boolean isOperator(char c) {
         return ("-+*=/<>|&!").indexOf(c) != -1;
+    }
+
+    private boolean isKeyword(String word) {
+        return KEYWORDS.contains(word);  // This ensures exact matches only
     }
 
     // an implementation of lookahead that aids in determining multi character
@@ -104,5 +125,39 @@ public class Scanner {
             currPosition++;
         }
     }
+
+    private Token scanIdentifierOrKeyword() {
+        StringBuilder word = new StringBuilder();
+        int state = 0; // State 0: starting state of FSM | State 1: identifying keyword/identifier
+
+        // iterate to find the possible token.
+        while (currPosition < sourceCodeLength) {
+            char currentChar = sourceCode.charAt(currPosition);
+
+            if (state == 0 && isLetter(currentChar)) {
+                word.append(currentChar);
+                currPosition++;
+                state = 1;
+            }
+            else if (state == 1 && (isLetter(currentChar) || isDigit(currentChar))) {
+                word.append(currentChar);
+                currPosition++;
+            }
+            else {
+                break;
+            }
+        }
+
+        // stores the identifier or keyword as a token.
+        String token = word.toString();
+        if (isKeyword(token)) {
+            return new Token(TokenType.KEYWORD, token);
+        } else if (token.equals("true") || token.equals("false")) {
+            return new Token(TokenType.BOOLEAN_LITERAL, token);
+        } else {
+            return new Token(TokenType.IDENTIFIER, token);
+        }
+    }
+
 
 }
