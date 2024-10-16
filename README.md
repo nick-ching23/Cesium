@@ -66,8 +66,7 @@ mvn compile
 
 Running the project: 
 ```bash
-java -cp target org.cesium.Main src/main/resources/LATest_BasicStream.ces
-
+java -cp target/classes org.cesium.Main src/main/resources/LATest_BasicStream.ces
 ```
 
 ## **Testing**
