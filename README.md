@@ -49,7 +49,7 @@ Cesium is a custom-built programming language designed to natively support react
 First, clone the Cesium project from the Git repository to your local machine:
 
 ```bash
-git clone https://github.com/your-repo-url/cesium.git](https://github.com/nick-ching23/Cesium.git)
+git clone https://github.com/nick-ching23/Cesium.git)
 cd cesium
 ```
 
