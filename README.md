@@ -94,7 +94,7 @@ This program's grammar produces tokens (handled natively within the class TokenT
  -  STRING_LITERAL : Represents a sequence of characters enclosed by '' or "" 
  -  BOOLEAN_LITERAL : Represents the boolean values true or false
  -  OPERATOR : Represents symbols that perform operations on operands {+, -, *, /, ==, =, !=, <, >, <=, >=, &&, ||, !, =}
- -  DELIMITER : Represents punctuation marks group expressions {(, ), [, ], {, }, ;, ,} 
+ -  DELIMITER : Represents punctuation marks group expressions ()[]{};,.
  -  UNKNOWN : Represents unrecognized tokens or characters that do not match any valid TokenType
 
 
