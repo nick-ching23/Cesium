@@ -7,4 +7,4 @@ if (temperature > 30 && humidity > 60) {
     heatIndex = 25;
 }
 
-print(heatIndex);
+print (heatIndex);

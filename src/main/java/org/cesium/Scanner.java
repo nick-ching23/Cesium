@@ -51,6 +51,9 @@ public class Scanner {
                     skipSingleLineComment();
                 } else if (lookAhead(1) == '*') {
                     skipMultiLineComment();
+                } else {
+                    tokens.add(new Token(TokenType.OPERATOR, "/"));
+                    currPosition++;
                 }
             } else if (isLetter(currentChar)) {
                 tokens.add(scanIdentifierOrKeyword());
@@ -61,13 +64,11 @@ public class Scanner {
             } else if (isOperator(currentChar)) {
                 tokens.add(scanOperator());
             } else if (isDelimiter(currentChar)) {
-
-                if (!isInvalidTokenAfterDelimiter()) {
-                    tokens.add(new Token(TokenType.DELIMITER, Character.toString(currentChar)));
-                    currPosition++;
-                }
-                else {
-                    throw new LexicalException("Invalid numeric literal ending with a dot at line " + line);
+                tokens.add(new Token(TokenType.DELIMITER, Character.toString(currentChar)));
+                currPosition++;
+                // Check if an invalid token (like ".1") appears after the delimiter
+                if (isInvalidTokenAfterDelimiter()) {
+                    throw new LexicalException("Invalid token after delimiter at line " + line);
                 }
             } else {
                 // Lexical Error

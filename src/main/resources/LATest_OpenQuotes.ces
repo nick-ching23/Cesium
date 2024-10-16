@@ -3,7 +3,7 @@ Stream stockPriceStream;
 Stream volumeStream;
 
 // Assign data to the financial streams
-stockPriceStream = Reactive{.1};
+stockPriceStream = Reactive{"This is an incomplete string literal};
 volumeStream = Reactive{"tradingVolume"};
 
 // Calculate the average stock price over 10 minutes
