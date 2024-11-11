@@ -19,6 +19,7 @@ public class Scanner {
         KEYWORDS.add("if");
         KEYWORDS.add("else");
         KEYWORDS.add("for");
+        KEYWORDS.add("while");
         KEYWORDS.add("return");
         KEYWORDS.add("print");
         KEYWORDS.add("reactive");
