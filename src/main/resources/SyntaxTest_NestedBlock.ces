@@ -1,0 +1,9 @@
+Stream tempSensor;
+tempSensor = readSensor("temperature");
+
+int day = 3;
+
+if (day > 1){
+    int updateTemp = tempSensor * 1.2;
+    print(updateTemp);
+}

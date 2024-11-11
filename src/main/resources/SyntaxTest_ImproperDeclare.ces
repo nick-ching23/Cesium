@@ -1,0 +1,8 @@
+Reactive;
+systemStatus = false;
+
+if (systemOn && powerAvailable) {
+    systemStatus = true;
+}
+
+print(systemStatus);
