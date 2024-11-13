@@ -264,7 +264,7 @@ public class Parser {
      */
     private boolean isTypeKeyword(String lexeme) {
         return lexeme.equals("int") || lexeme.equals("float") || lexeme.equals("string") ||
-          lexeme.equals("list") || lexeme.equals("Stream") || lexeme.equals("Reactive");
+          lexeme.equals("Stream") || lexeme.equals("Reactive");
     }
 
     /**
