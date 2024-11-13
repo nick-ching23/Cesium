@@ -76,11 +76,15 @@ java -cp target/classes org.cesium.Main src/main/resources/LATest_BasicStream.ce
 Note: Refer to  ```bash /src/main/resources/``` for more details about tests 
 
 
-Running Tests: 
+Running Tests for lexical analyzer: 
 ```bash
 ./test_script.sh
 ```
 
+Running Tests for parser:
+```bash
+./parse_test_script.sh
+```
 ---
 
 ## **Phase 1: About the Lexical Analyzer**
