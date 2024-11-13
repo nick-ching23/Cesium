@@ -20,7 +20,7 @@ Cesium is a custom-built programming language designed to natively support react
 
 
 
-## **Current Functionality**
+## **Current Functionality ##
 - Lexical Analyzer for tokenizing source code
 - Support for keywords, operators, identifiers, numeric literals, string literals, boolean literals, and comments.
 - Exception handling for various kinds of lexical errors.
@@ -127,5 +127,65 @@ Whitespace and comments in Cesium are not tokenized; they are skipped to ensure 
 **Programming Assignment #2:** 
 
 Cesium's Context Free Grammar:
+
+
+```plaintext
+CesiumCode -> StatementList 
+StatementList -> Statement | StatementList Statement 
+
+Statement -> 
+            DeclarationStatement ; 
+          | AssignmentStatement ; 
+          | ReturnStatement ; 
+          | ExpressionStatement ;
+          | IfStatement 
+          | ForStatement 
+          | WhileStatement 
+          | PrintStatement ;     
+          | CodeBlock 
+
+DeclarationStatement -> VariableDeclaration | FunctionDeclaration
+VariableDeclaration -> Type IDENTIFIER '=' Expression | Type IDENTIFIER
+FunctionDeclaration -> 'function' IDENTIFIER '(' ParameterList ')' '{' CodeBlock '}'
+ParameterList -> Parameter | ParameterList ',' Parameter 
+Parameter -> Type IDENTIFIER 
+Type -> 'int' | 'float' | 'string' | 'Stream' | 'Reactive' 
+
+AssignmentStatement -> IDENTIFIER '=' Expression 
+ExpressionStatement -> Expression 
+ReturnStatement -> 'return' Expression
+
+PrintStatement -> 'print' '(' Expression ')'
+
+Expression -> OrExpression 
+OrExpression -> OrExpression '||' AndExpression | AndExpression 
+AndExpression -> AndExpression '&&' EqualityExpression | EqualityExpression 
+EqualityExpression -> EqualityExpression ('==' | '!=') RelationalExpression | RelationalExpression 
+RelationalExpression -> RelationalExpression ('>' | '<' | '>=' | '<=') AdditiveExpression | AdditiveExpression
+AdditiveExpression -> AdditiveExpression ('+' | '-') MultiplicativeExpression | MultiplicativeExpression
+MultiplicativeExpression -> MultiplicativeExpression ('*' | '/') UnaryExpression | UnaryExpression
+UnaryExpression -> '!' UnaryExpression | PrimaryExpression
+PrimaryExpression ->
+      '(' Expression ')'
+    | IDENTIFIER
+    | NUMERIC_LITERAL
+    | STRING_LITERAL
+    | BOOLEAN_LITERAL
+    | FunctionCall
+
+FunctionCall -> IDENTIFIER '(' ')' | IDENTIFIER '(' ArgumentList ')'
+ArgumentList -> Expression | ArgumentList ',' Expression
+
+ForStatement -> 'for' '(' InitFor ';' Expression ';' UpdateFor ')' '{' CodeBlock '}' 
+IfStatement -> 'if' '(' Expression ')' '{' CodeBlock '}' ('else' CodeBlock) // brackets indicate optional here!
+InitFor -> VariableDeclaration | AssignmentStatement | ε
+UpdateFor -> AssignmentStatement | ε
+WhileStatement -> 'while' '(' Expression ')' '{' CodeBlock '}'
+
+CodeBlock -> '{' StatementList '}' | '{' '}'
+```
+
+## Our parsing algorithm: 
+Our solution implement a recursive descent parser with LL(1) approach. 
 
 
