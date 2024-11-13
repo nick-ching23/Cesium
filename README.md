@@ -14,6 +14,7 @@ Cesium is a custom-built programming language designed to natively support react
 
 ## **Current Progress**
    **12 Nov 2024:** Completed the Parser. Please refer to the bottom of this document for an explanation of our grammar
+   
    **15 Oct 2024:** Completed Lexical Analyzer (tokenizing source code into Lexemes)
 
 
