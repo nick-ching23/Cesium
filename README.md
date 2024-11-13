@@ -13,6 +13,8 @@ Cesium is a custom-built programming language designed to natively support react
 
 
 ## **Current Progress**
+   **12 Nov 2024:** Completed the Parser. Please refer to the bottom of this document for an explanation of our grammar
+   
    **15 Oct 2024:** Completed Lexical Analyzer (tokenizing source code into Lexemes)
 
 
@@ -115,3 +117,11 @@ This program's grammar produces tokens (handled natively within the class TokenT
 
 
 Whitespace and comments in Cesium are not tokenized; they are skipped to ensure valid tokens are created. The TokenType.java file defines all valid tokens, while the main scanning logic is handled by Scanner.java. The scanner processes the source code by iterating through each character, skipping over whitespace and comments, and identifying valid tokens such as keywords, identifiers, numeric literals, and operators. Helper methods like isLetter() and isDigit() assist in identifying different token types. The scanSourceCode() method returns a list of tokens formatted as <Token Type, Token Value>, ready for further processing.​⬤
+
+
+---------------------------------------------------------
+**Programming Assignment #2:** 
+
+Cesium's Context Free Grammar:
+
+
