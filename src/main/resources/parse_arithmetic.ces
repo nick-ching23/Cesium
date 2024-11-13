@@ -1,0 +1,16 @@
+int a = 10;
+int b = 5;
+float x = 4.5;
+float y = 2.0;
+
+int sum = a + b;
+int difference = a - b;
+int product = a * b;
+float quotient = x / y;
+float complexCalculation = (a + b) * x / (y - 1.0) + 3.0;
+
+print("Sum of a and b: " + sum);
+print("Difference of a and b: " + difference);
+print("Product of a and b: " + product);
+print("Quotient of x and y: " + quotient);
+print("Result of complex calculation: " + complexCalculation);

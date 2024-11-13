@@ -14,15 +14,27 @@ public class Scanner {
 
     // defines keywords for this language
     static {
+
+        // Data Types
         KEYWORDS.add("Stream");
         KEYWORDS.add("Reactive");
+        KEYWORDS.add("int");
+        KEYWORDS.add("float");
+        KEYWORDS.add("string");
+        KEYWORDS.add("list");
+        KEYWORDS.add("function");
+
+        // Boolean Keywords
         KEYWORDS.add("if");
         KEYWORDS.add("else");
+
+        // Control Keywords
         KEYWORDS.add("for");
         KEYWORDS.add("while");
         KEYWORDS.add("return");
+
+        // I/O
         KEYWORDS.add("print");
-        KEYWORDS.add("reactive");
     }
 
     // given source code, we identify position. This allows iterating through source code

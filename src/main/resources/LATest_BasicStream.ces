@@ -1,11 +1,14 @@
-// Define two streams
-Stream tempSensor;
-Stream pressureSensor;
 
-// Assign sensor data
-tempSensor = readSensor("temperature");
-pressureSensor = readSensor("pressure");
+Stream temperature;
+int max = 0;
 
-// Print the values
-print(tempSensor);
-print(pressureSensor);
+function getLatestMaximum(Stream data) {
+    if (data > max) {
+        return max;
+    } else {
+        max = data;
+        return max;
+    }
+}
+
+print(getLatestMaximum(temperature));

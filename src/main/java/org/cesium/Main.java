@@ -28,9 +28,21 @@ public class Main {
                 Scanner scanner = new Scanner(code);
                 List<Token> tokens = scanner.scanSourceCode();
 
-                for (Token token : tokens) {
-                    System.out.println(token);
+                System.out.println(tokens);
+                System.out.println("\n");
+
+                Parser parser = new Parser(tokens);
+                try {
+                    ASTNode ast = parser.parse();
+
+                    DisplayAST printer = new DisplayAST();
+                    String astOutput = printer.toString(ast);
+                    System.out.println(astOutput);
+
+                } catch (Parser.ParseException e) {
+                    System.err.println("Parse error: " + e.getMessage());
                 }
+
             } else {
                 System.err.println("File not found: " + fileName);
             }
@@ -40,7 +52,7 @@ public class Main {
         } catch (LexicalException e) {
             // Catch the lexical error and print the error message
             System.err.println("Lexical Error: " + e.getMessage());
-            System.exit(1);  // Exit the program after a lexical error
+            System.exit(1);
         }
     }
 }
