@@ -30,7 +30,7 @@ public class CodeGenerator {
     }
 
     public void generateCode(CesiumProgram program, String outputClassName) throws IOException {
-        // First, simplify the entire program's AST before code generation using the Optimization class
+        // Simplify AST
         CesiumProgram simplifiedProgram = Optimization.simplifyProgram(program);
 
         this.className = outputClassName.replace('.', '/');
@@ -43,7 +43,7 @@ public class CodeGenerator {
         // Create main method
         startMethod("main", "([Ljava/lang/String;)V", ACC_PUBLIC + ACC_STATIC);
 
-        // Generate code for top-level statements (now simplified)
+        // Generate code for top-level statements
         for (Statement stmt : simplifiedProgram.getStatements()) {
             generateStatement(stmt);
         }
@@ -103,7 +103,18 @@ public class CodeGenerator {
         } else if (statement instanceof AssignmentStatement) {
             generateAssignmentStatement((AssignmentStatement) statement);
         } else if (statement instanceof ExpressionStatement) {
-            generateExpression(((ExpressionStatement) statement).getExpression());
+            Expression expr = ((ExpressionStatement) statement).getExpression();
+            // Check if this is a setValue call
+            if (expr instanceof FunctionCallExpression) {
+                FunctionCallExpression fce = (FunctionCallExpression) expr;
+                if (fce.getIdentifier().equals("setValue")) {
+                    // generate call without popping, because setValue is void
+                    generateFunctionCallExpression(fce);
+                    return;
+                }
+            }
+            // For other expressions that return a value, we pop
+            generateExpression(expr);
             currentMethodVisitor.visitInsn(POP);
         } else if (statement instanceof PrintStatement) {
             generatePrintStatement((PrintStatement) statement);
@@ -137,8 +148,34 @@ public class CodeGenerator {
             variableTypes.peek().put(varName, type);
 
             if (varDecl.getInitializer() != null) {
-                generateExpression(varDecl.getInitializer());
-                storeVariable(type, index);
+                // If type is Stream and initializer is a literal int:
+                if (type.equals("Stream") && varDecl.getInitializer() instanceof LiteralExpression) {
+                    // Create a new Stream
+                    currentMethodVisitor.visitTypeInsn(NEW, "org/cesium/Stream");
+                    currentMethodVisitor.visitInsn(DUP);
+                    currentMethodVisitor.visitMethodInsn(INVOKESPECIAL, "org/cesium/Stream", "<init>", "()V", false);
+                    currentMethodVisitor.visitVarInsn(ASTORE, index);
+
+                    // Now set its value
+                    LiteralExpression le = (LiteralExpression) varDecl.getInitializer();
+                    Token lit = le.getLiteral();
+                    if (lit.getType() == TokenType.NUMERIC_LITERAL) {
+                        int iVal = Integer.parseInt(lit.getValue());
+                        // push stream
+                        currentMethodVisitor.visitVarInsn(ALOAD, index);
+                        // push int
+                        currentMethodVisitor.visitLdcInsn(iVal);
+                        // call Util.setValue
+                        currentMethodVisitor.visitMethodInsn(INVOKESTATIC, "org/cesium/Util", "setValue", "(Lorg/cesium/Stream;I)V", false);
+                    } else {
+                        throw new UnsupportedOperationException("Can't initialize stream with non-numeric literal");
+                    }
+
+                } else {
+                    // Normal initialization
+                    generateExpression(varDecl.getInitializer());
+                    storeVariable(type, index);
+                }
             } else {
                 // default init
                 defaultInit(type, index);
@@ -178,6 +215,12 @@ public class CodeGenerator {
                 currentMethodVisitor.visitVarInsn(ASTORE, index);
                 break;
             case "Stream":
+                // Instantiate a new Stream by default
+                currentMethodVisitor.visitTypeInsn(NEW, "org/cesium/Stream");
+                currentMethodVisitor.visitInsn(DUP);
+                currentMethodVisitor.visitMethodInsn(INVOKESPECIAL, "org/cesium/Stream", "<init>", "()V", false);
+                currentMethodVisitor.visitVarInsn(ASTORE, index);
+                break;
             case "Reactive":
                 // Default to null
                 currentMethodVisitor.visitInsn(ACONST_NULL);
@@ -249,29 +292,34 @@ public class CodeGenerator {
     }
 
     private void generatePrintStatement(PrintStatement stmt) {
-        currentMethodVisitor.visitFieldInsn(GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
-
         Expression expr = stmt.getExpression();
         String exprType = getExpressionType(expr);
 
-        generateExpression(expr);
-        switch (exprType) {
-            case "int":
-                currentMethodVisitor.visitMethodInsn(INVOKEVIRTUAL, "java/io/PrintStream", "println", "(I)V", false);
-                break;
-            case "float":
-                currentMethodVisitor.visitMethodInsn(INVOKEVIRTUAL, "java/io/PrintStream", "println", "(F)V", false);
-                break;
-            case "string":
-                currentMethodVisitor.visitMethodInsn(INVOKEVIRTUAL, "java/io/PrintStream", "println", "(Ljava/lang/String;)V", false);
-                break;
-            case "Stream":
-            case "Reactive":
-                currentMethodVisitor.visitMethodInsn(INVOKEVIRTUAL, "java/io/PrintStream", "println", "(Ljava/lang/Object;)V", false);
-                break;
-            default:
-                currentMethodVisitor.visitMethodInsn(INVOKEVIRTUAL, "java/io/PrintStream", "println", "(Ljava/lang/Object;)V", false);
-                break;
+        if (exprType.equals("Reactive")) {
+            generateExpression(expr);
+            currentMethodVisitor.visitMethodInsn(INVOKEVIRTUAL, "org/cesium/Reactive", "getValue", "()Ljava/lang/Integer;", false);
+            currentMethodVisitor.visitMethodInsn(INVOKESTATIC, "org/cesium/Util", "printReactiveValue", "(Ljava/lang/Integer;)V", false);
+        } else {
+            currentMethodVisitor.visitFieldInsn(GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
+            generateExpression(expr);
+            switch (exprType) {
+                case "int":
+                    currentMethodVisitor.visitMethodInsn(INVOKEVIRTUAL, "java/io/PrintStream", "println", "(I)V", false);
+                    break;
+                case "float":
+                    currentMethodVisitor.visitMethodInsn(INVOKEVIRTUAL, "java/io/PrintStream", "println", "(F)V", false);
+                    break;
+                case "string":
+                    currentMethodVisitor.visitMethodInsn(INVOKEVIRTUAL, "java/io/PrintStream", "println", "(Ljava/lang/String;)V", false);
+                    break;
+                case "Stream":
+                case "Reactive":
+                    currentMethodVisitor.visitMethodInsn(INVOKEVIRTUAL, "java/io/PrintStream", "println", "(Ljava/lang/Object;)V", false);
+                    break;
+                default:
+                    currentMethodVisitor.visitMethodInsn(INVOKEVIRTUAL, "java/io/PrintStream", "println", "(Ljava/lang/Object;)V", false);
+                    break;
+            }
         }
     }
 
@@ -443,14 +491,21 @@ public class CodeGenerator {
             ensureNumericOrThrowForComparison(leftType);
             ensureNumericOrThrowForComparison(rightType);
             generateComparisonExpression(expr, leftType, rightType);
-        } else if (op.equals("+") || op.equals("-")
-          || op.equals("*") || op.equals("/")) {
-            ensureNumericOrThrow(leftType);
-            ensureNumericOrThrow(rightType);
-            generateArithmeticExpression(expr, leftType, rightType);
+        } else if (op.equals("+") || op.equals("-") || op.equals("*") || op.equals("/")) {
+            if ((isNumericType(leftType)) && (isNumericType(rightType))) {
+                // primitive arithmetic
+                generateArithmeticExpression(expr, leftType, rightType);
+            } else {
+                // Reactive/Stream arithmetic
+                generateReactiveArithmetic(expr, op, leftType, rightType);
+            }
         } else {
             throw new UnsupportedOperationException("Unsupported operator: " + op);
         }
+    }
+
+    private boolean isNumericType(String t) {
+        return t.equals("int") || t.equals("float");
     }
 
     private boolean isComparisonOp(String op) {
@@ -515,6 +570,39 @@ public class CodeGenerator {
                     currentMethodVisitor.visitInsn(FMUL); break;
                 case "/":
                     currentMethodVisitor.visitInsn(FDIV); break;
+            }
+        }
+    }
+
+    private void generateReactiveArithmetic(BinaryExpression expr, String op, String leftType, String rightType) {
+        generateExpression(expr.getLeft());
+        generateExpression(expr.getRight());
+
+        String opsClass = "org/cesium/ReactiveOps";
+
+        if (op.equals("+")) {
+            if (leftType.equals("Stream")) {
+                currentMethodVisitor.visitMethodInsn(INVOKESTATIC, opsClass, "add", "(Lorg/cesium/Stream;I)Lorg/cesium/Reactive;", false);
+            } else {
+                currentMethodVisitor.visitMethodInsn(INVOKESTATIC, opsClass, "add", "(Lorg/cesium/Reactive;I)Lorg/cesium/Reactive;", false);
+            }
+        } else if (op.equals("*")) {
+            if (leftType.equals("Stream")) {
+                currentMethodVisitor.visitMethodInsn(INVOKESTATIC, opsClass, "multiply", "(Lorg/cesium/Stream;I)Lorg/cesium/Reactive;", false);
+            } else {
+                currentMethodVisitor.visitMethodInsn(INVOKESTATIC, opsClass, "multiply", "(Lorg/cesium/Reactive;I)Lorg/cesium/Reactive;", false);
+            }
+        } else if (op.equals("-")) {
+            if (leftType.equals("Stream")) {
+                currentMethodVisitor.visitMethodInsn(INVOKESTATIC, opsClass, "subtract", "(Lorg/cesium/Stream;I)Lorg/cesium/Reactive;", false);
+            } else {
+                currentMethodVisitor.visitMethodInsn(INVOKESTATIC, opsClass, "subtract", "(Lorg/cesium/Reactive;I)Lorg/cesium/Reactive;", false);
+            }
+        } else if (op.equals("/")) {
+            if (leftType.equals("Stream")) {
+                currentMethodVisitor.visitMethodInsn(INVOKESTATIC, opsClass, "divide", "(Lorg/cesium/Stream;I)Lorg/cesium/Reactive;", false);
+            } else {
+                currentMethodVisitor.visitMethodInsn(INVOKESTATIC, opsClass, "divide", "(Lorg/cesium/Reactive;I)Lorg/cesium/Reactive;", false);
             }
         }
     }
@@ -624,9 +712,24 @@ public class CodeGenerator {
     }
 
     private void generateFunctionCallExpression(FunctionCallExpression expr) {
-        MethodDescriptor md = functionSignatures.get(expr.getIdentifier());
+        String funcName = expr.getIdentifier();
+        if (funcName.equals("setValue")) {
+            // setValue(Stream,int) -> void
+            for (Expression arg : expr.getArguments()) {
+                generateExpression(arg);
+            }
+            currentMethodVisitor.visitMethodInsn(INVOKESTATIC,
+              "org/cesium/Util",
+              "setValue",
+              "(Lorg/cesium/Stream;I)V",
+              false);
+            return;
+        }
+
+        // handle user-defined functions
+        MethodDescriptor md = functionSignatures.get(funcName);
         if (md == null) {
-            throw new RuntimeException("Call to undefined function: " + expr.getIdentifier());
+            throw new RuntimeException("Call to undefined function: " + funcName);
         }
 
         for (Expression arg : expr.getArguments()) {
@@ -714,8 +817,13 @@ public class CodeGenerator {
                 return "int";
             } else {
                 // arithmetic
-                if (left.equals("float") || right.equals("float")) return "float";
-                return "int";
+                if (left.equals("Stream") || left.equals("Reactive")
+                  || right.equals("Stream") || right.equals("Reactive")) {
+                    return "Reactive";
+                } else {
+                    if (left.equals("float") || right.equals("float")) return "float";
+                    return "int";
+                }
             }
         } else if (expr instanceof UnaryExpression) {
             if (((UnaryExpression) expr).getOperator().equals("!")) {
@@ -727,7 +835,8 @@ public class CodeGenerator {
                 return subtype;
             }
         } else if (expr instanceof FunctionCallExpression) {
-            // all functions return int for simplicity
+            // all user-defined functions return int
+            // setValue returns void, but we handle it specially and don't query type here
             return "int";
         } else {
             throw new UnsupportedOperationException("Cannot infer expression type: " + expr.getClass());
