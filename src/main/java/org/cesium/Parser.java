@@ -382,6 +382,7 @@ public class Parser {
         return leftExpression;
     }
 
+
     private Expression parseUnaryExpression() throws ParseException {
         if (currentToken != null && isUnary(currentToken)) {
             String operator = currentToken.getValue();
@@ -492,8 +493,9 @@ public class Parser {
 
     private boolean isUnary(Token currentToken) {
         return currentToken.getType() == TokenType.OPERATOR &&
-          currentToken.getValue().equals("!");
+          (currentToken.getValue().equals("!") || currentToken.getValue().equals("-"));
     }
+
 
 
     // IF, FOR, WHILE, PRINT - parsing functions

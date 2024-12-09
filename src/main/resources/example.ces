@@ -1,0 +1,4 @@
+stream s;
+Reactive r = s * 10 + 15;
+print(r); // Initially, s has not emitted anything, so r has no value or is null
+
