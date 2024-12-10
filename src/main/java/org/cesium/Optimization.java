@@ -5,242 +5,431 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * The Optimization class contains static methods to simplify and optimize
- * the AST before code generation. It handles tasks like:
- * - Constant folding (e.g. replacing expressions like 3+5 with 8)
- * - Eliminating dead code (e.g. if(false) { ... } -> remove block)
- * - Removing while(false) loops and unreachable branches
+ * The Optimization class aims to simplify the AST tree before code gen
+ * My code handles:
+ * - Constant folding
+ * - Eliminating dead code
+ * - Removing while(false) -- these will basically never execute...
  */
 public class Optimization {
 
+    /**
+     * Simplify the entire Cesium program by optimizing its statements.
+     */
     public static CesiumProgram simplifyProgram(CesiumProgram program) {
         List<Statement> simplified = new ArrayList<>();
-        for (Statement s : program.getStatements()) {
-            Statement simp = simplifyStatement(s);
-            if (simp != null) {
-                simplified.add(simp);
+        for (Statement statement : program.getStatements()) {
+             Statement simplifiedStatement = simplifyStatement(statement);
+            if (simplifiedStatement != null) {
+                simplified.add(simplifiedStatement);
             }
         }
         return new CesiumProgram(simplified);
     }
 
-    private static Statement simplifyStatement(Statement stmt) {
-        if (stmt instanceof DeclarationStatement) {
-            DeclarationStatement ds = (DeclarationStatement) stmt;
-            Declaration d = ds.getDeclaration();
-            if (d instanceof VariableDeclaration) {
-                VariableDeclaration vd = (VariableDeclaration)d;
-                Expression init = vd.getInitializer();
-                if (init != null) {
-                    init = simplifyExpression(init);
-                    vd = new VariableDeclaration(vd.getType(), vd.getIdentifier(), init);
-                }
-                return new DeclarationStatement(vd);
-            } else if (d instanceof FunctionDeclaration) {
-                FunctionDeclaration fd = (FunctionDeclaration)d;
-                CodeBlock body = (CodeBlock) simplifyStatement(fd.getBody());
-                return new DeclarationStatement(new FunctionDeclaration(fd.getIdentifier(), fd.getParameters(), body));
-            }
-        } else if (stmt instanceof AssignmentStatement) {
-            AssignmentStatement as = (AssignmentStatement) stmt;
-            Expression simpExpr = simplifyExpression(as.getExpression());
-            return new AssignmentStatement(as.getIdentifier(), simpExpr);
-        } else if (stmt instanceof ExpressionStatement) {
-            ExpressionStatement es = (ExpressionStatement) stmt;
-            Expression simpExpr = simplifyExpression(es.getExpression());
-            return new ExpressionStatement(simpExpr);
-        } else if (stmt instanceof PrintStatement) {
-            PrintStatement ps = (PrintStatement) stmt;
-            Expression simpExpr = simplifyExpression(ps.getExpression());
-            return new PrintStatement(simpExpr);
-        } else if (stmt instanceof IfStatement) {
-            IfStatement is = (IfStatement) stmt;
-            Expression cond = simplifyExpression(is.getCondition());
-            CodeBlock thenBlock = (CodeBlock) simplifyStatement(is.getThenBlock());
-            CodeBlock elseBlock = is.getElseBlock() != null ? (CodeBlock) simplifyStatement(is.getElseBlock()) : null;
-
-            Integer val = tryEvaluateCondition(cond);
-            if (val != null) {
-                if (val == 0) {
-                    // condition false: use else block or remove entirely
-                    return elseBlock != null ? elseBlock : null;
-                } else {
-                    // condition true: only then block matters
-                    return thenBlock;
-                }
-            }
-            return new IfStatement(cond, thenBlock, elseBlock);
-        } else if (stmt instanceof WhileStatement) {
-            WhileStatement ws = (WhileStatement) stmt;
-            Expression cond = simplifyExpression(ws.getCondition());
-            CodeBlock body = (CodeBlock) simplifyStatement(ws.getBody());
-
-            Integer val = tryEvaluateCondition(cond);
-            if (val != null && val == 0) {
-                // while(false) -> remove entire loop
-                return null;
-            }
-            return new WhileStatement(cond, body);
-        } else if (stmt instanceof ForStatement) {
-            ForStatement fs = (ForStatement) stmt;
-            Statement init = fs.getInitialization() != null ? simplifyStatement(fs.getInitialization()) : null;
-            Expression cond = fs.getCondition() != null ? simplifyExpression(fs.getCondition()) : null;
-            Statement update = fs.getUpdate() != null ? simplifyStatement(fs.getUpdate()) : null;
-            CodeBlock body = (CodeBlock) simplifyStatement(fs.getBody());
-
-            if (cond != null) {
-                Integer val = tryEvaluateCondition(cond);
-                if (val != null && val == 0) {
-                    // for(...; false; ...) no iteration
-                    // Keep init if it has side effects (we assume no side effects for now)
-                    List<Statement> res = new ArrayList<>();
-                    if (init != null) res.add(init);
-                    return new CodeBlock(res);
-                }
-            }
-            return new ForStatement(init, cond, update, body);
-        } else if (stmt instanceof ReturnStatement) {
-            ReturnStatement rs = (ReturnStatement) stmt;
-            Expression simp = simplifyExpression(rs.getExpression());
-            return new ReturnStatement(simp);
-        } else if (stmt instanceof CodeBlock) {
-            CodeBlock cb = (CodeBlock) stmt;
-            List<Statement> simplifiedStmts = new ArrayList<>();
-            for (Statement s : cb.getStatements()) {
-                Statement simp = simplifyStatement(s);
-                if (simp != null) {
-                    simplifiedStmts.add(simp);
-                }
-            }
-            return new CodeBlock(simplifiedStmts);
-        }
-
-        return stmt;
+    /**
+     * Recursively simplify a statement by handling different statement types
+     * and applying optimizations.
+     */
+    private static Statement simplifyStatement(Statement statement) {
+        return switch (statement) {
+            case DeclarationStatement declarationStatement -> simplifyDeclarationStatement(declarationStatement);
+            case AssignmentStatement assignmentStatement -> simplifyAssignmentStatement(assignmentStatement);
+            case ExpressionStatement expressionStatement -> simplifyExpressionStatement(expressionStatement);
+            case PrintStatement printStatement -> simplifyPrintStatement(printStatement);
+            case IfStatement ifStatement -> simplifyIfStatement(ifStatement);
+            case WhileStatement whileStatement -> simplifyWhileStatement(whileStatement);
+            case ForStatement forStatement -> simplifyForStatement(forStatement);
+            case ReturnStatement returnStatement -> simplifyReturnStatement(returnStatement);
+            case CodeBlock codeBlock -> simplifyCodeBlock(codeBlock);
+            default -> statement;
+        };
     }
 
-    private static Expression simplifyExpression(Expression expr) {
-        if (expr instanceof LiteralExpression) {
-            return expr;
-        } else if (expr instanceof VariableExpression) {
-            return expr;
-        } else if (expr instanceof UnaryExpression) {
-            UnaryExpression ue = (UnaryExpression) expr;
-            Expression simp = simplifyExpression(ue.getExpression());
-            if (simp instanceof LiteralExpression && ue.getOperator().equals("-")) {
-                LiteralExpression lit = (LiteralExpression) simp;
-                if (lit.getLiteral().getType() == TokenType.NUMERIC_LITERAL) {
-                    String val = lit.getLiteral().getValue();
-                    if (val.startsWith("-")) {
-                        val = val.substring(1);
-                    } else {
-                        val = "-" + val;
-                    }
-                    return new LiteralExpression(new Token(TokenType.NUMERIC_LITERAL, val));
+    /**
+     * Simplify a DeclarationStatement (could be a function or a variable that we simplify  )
+     */
+    private static Statement simplifyDeclarationStatement(DeclarationStatement declarationStatement) {
+        Declaration declaration = declarationStatement.getDeclaration();
+
+        // simplify initializer if it's present
+        if (declaration instanceof VariableDeclaration variableDeclaration) {
+            Expression init = variableDeclaration.getInitializer();
+
+            if (init != null) {
+                init = simplifyExpression(init);
+                variableDeclaration = new VariableDeclaration(variableDeclaration.getType(),
+                  variableDeclaration.getIdentifier(), init);
+            }
+            return new DeclarationStatement(variableDeclaration);
+        }
+
+        // simplify the function body
+        if (declaration instanceof FunctionDeclaration functionDeclaration) {
+            CodeBlock body = (CodeBlock) simplifyStatement(functionDeclaration.getBody());
+
+            FunctionDeclaration  simplifiedFd = new FunctionDeclaration(
+              functionDeclaration.getIdentifier(), functionDeclaration.getParameters(), body
+            );
+
+            return new DeclarationStatement(simplifiedFd);
+        }
+
+        return declarationStatement;
+    }
+
+    /**
+     * Simplify an AssignmentStatement
+     */
+    private static Statement simplifyAssignmentStatement(AssignmentStatement as) {
+        Expression simpExpr = simplifyExpression(as.getExpression());
+        return new AssignmentStatement(as.getIdentifier(), simpExpr);
+    }
+
+    /**
+     * Simplify an ExpressionStatement
+     */
+    private static Statement simplifyExpressionStatement(ExpressionStatement es) {
+        Expression simpExpr = simplifyExpression(es.getExpression());
+        return new ExpressionStatement(simpExpr);
+    }
+
+    /**
+     * Simplify a PrintStatement
+     */
+    private static Statement simplifyPrintStatement(PrintStatement ps) {
+        Expression simpExpr = simplifyExpression(ps.getExpression());
+        return new PrintStatement(simpExpr);
+    }
+
+    /**
+     * Simplify an IfStatement by evaluating its condition
+     * we cut branches if the condition is just constantly true or false
+     */
+    private static Statement simplifyIfStatement(IfStatement is) {
+        Expression condition = simplifyExpression(is.getCondition());
+        CodeBlock thenBlock = (CodeBlock) simplifyStatement(is.getThenBlock());
+         CodeBlock elseBlock;
+
+        // simplify if there is an else block
+        if (is.getElseBlock() != null) {
+            elseBlock = (CodeBlock) simplifyStatement(is.getElseBlock());
+        } else {
+            elseBlock = null;
+        }
+
+        Boolean val = tryEvaluateCondition(condition);
+        if (val != null) {
+            // Condition is constant
+            if (!val) {
+                return elseBlock; // if we get here only use else
+            } else {
+                return thenBlock; // if we get here, only use the then block
+            }
+        }
+
+        // return ifStatement if there are no optimizations to be made here.
+        return new IfStatement(condition, thenBlock, elseBlock);
+    }
+
+    /**
+     * Simplify a WhileStatement by looking at the condition.
+     * If the while condition is false, then we can simply skip the entire while loop.
+     */
+    private static Statement simplifyWhileStatement(WhileStatement whileStatement) {
+        Expression condition = simplifyExpression(whileStatement.getCondition());
+        CodeBlock body = (CodeBlock) simplifyStatement(whileStatement.getBody());
+
+        Boolean val = tryEvaluateCondition(condition);
+
+        // if the condition is false, we can just skip the entire while loop.
+        if (val != null && !val) {
+            return null;
+        }
+
+        // otherwise we simply return the while statement.
+        return new WhileStatement(condition, body);
+    }
+
+
+    /**
+      * Simplify a ForStatement by checking if its condition is always false. It is conceivable
+     * that a for loop will not run at all (if initialized vars are already out of the bounds)
+     * I am currently assuming no side-effects.
+     */
+    private static Statement simplifyForStatement(ForStatement forStatement) {
+        // Simplify each component of the for loop
+        Statement initStatement = null;
+        if (forStatement.getInitialization() != null) {
+            initStatement = simplifyStatement(forStatement.getInitialization());
+        }
+
+        // simplify the condition
+        Expression condition = null;
+        if (forStatement.getCondition() != null) {
+            condition = simplifyExpression(forStatement.getCondition());
+        }
+
+        // simplify the update statement
+        Statement update = null;
+        if (forStatement.getUpdate() != null) {
+             update = simplifyStatement(forStatement.getUpdate());
+        }
+
+        CodeBlock body = (CodeBlock) simplifyStatement(forStatement.getBody());
+
+        // If the condition is known to be false, the loop never runs
+        if (condition != null) {
+            Boolean value = tryEvaluateCondition(condition);
+            if (value != null && !value) {
+                List<Statement> initOnly = new ArrayList<>();
+
+                if (initStatement != null) {
+                    initOnly.add(initStatement);
                 }
-            } else if (simp instanceof LiteralExpression && ue.getOperator().equals("!")) {
-                Integer boolVal = tryEvaluateCondition(simp);
+
+                return new CodeBlock(initOnly);
+            }
+        }
+
+
+        // If condition is not false at compile, we just return the for loop as is
+        return new ForStatement(initStatement, condition, update, body);
+    }
+
+    /**
+     * Simplify a ReturnStatement
+     */
+    private static Statement simplifyReturnStatement(ReturnStatement returnStatement) {
+        Expression simplifiedReturn = simplifyExpression(returnStatement.getExpression());
+        return new ReturnStatement(simplifiedReturn);
+    }
+
+
+
+    /**
+     * Simplify a CodeBlock. Note that here we basically simplify the contents of the code block
+     * which can be recursive.
+     */
+    private static Statement simplifyCodeBlock(CodeBlock codeBlock) {
+        List<Statement> simplifiedStatements = new ArrayList<>();
+        for (Statement statement : codeBlock.getStatements()) {
+            Statement simplifiedStatement = simplifyStatement(statement);
+
+            if (simplifiedStatement != null) {
+                simplifiedStatements.add(simplifiedStatement);
+            }
+        }
+
+        // we will end up with a clean and simplified code block here...
+        return new CodeBlock(simplifiedStatements);
+    }
+
+    /**
+     * Actual logic for simplifying expressions: apply constnat folding, and logical simplifications
+     */
+    private static Expression simplifyExpression(Expression expression) {
+
+        // we can't really simplify these
+        if (expression instanceof LiteralExpression
+          || expression instanceof VariableExpression
+          || expression instanceof FunctionCallExpression) {
+            return expression;
+        }
+        else if (expression instanceof UnaryExpression) {
+            return simplifyUnaryExpression((UnaryExpression) expression);
+        }
+
+        else if (expression instanceof BinaryExpression) {
+            return simplifyBinaryExpression((BinaryExpression) expression);
+        }
+
+        // Fallback if no other rule applies
+        return expression;
+     }
+
+    /**
+     * Simplify a UnaryExpression by applying constant folding if operand is
+     * a literal.
+     */
+    private static Expression simplifyUnaryExpression(UnaryExpression unaryExpression) {
+        // First, simplify the inner expression
+        Expression simplifiedInner = simplifyExpression(unaryExpression.getExpression());
+
+        // If the inner expression is a literal, attempt constant folding
+        if (simplifiedInner instanceof LiteralExpression literalExpression) {
+             String operator = unaryExpression.getOperator();
+
+            // Handles numeric negations like: -(-5) = 5
+            if ("-".equals(operator) && literalExpression.getLiteral().getType() == TokenType.NUMERIC_LITERAL) {
+                    String value = literalExpression.getLiteral().getValue();
+
+                if (value.startsWith("-")) {
+                     value = value.substring(1);
+                 } else {
+                    value = "-" + value;
+                }
+                return new LiteralExpression(new Token(TokenType.NUMERIC_LITERAL, value));
+            }
+
+            // Handle boolean negation
+            if ("!".equals(operator)) {
+                Boolean boolVal = tryEvaluateCondition(simplifiedInner);
                 if (boolVal != null) {
-                    int inverted = (boolVal == 0) ? 1 : 0;
+                    Boolean inverted = !boolVal;
                     return new LiteralExpression(new Token(TokenType.NUMERIC_LITERAL, String.valueOf(inverted)));
                 }
-            }
-            return new UnaryExpression(ue.getOperator(), simp);
-        } else if (expr instanceof BinaryExpression) {
-            BinaryExpression be = (BinaryExpression) expr;
-            Expression left = simplifyExpression(be.getLeft());
-            Expression right = simplifyExpression(be.getRight());
+             }
+        }
 
-            // Constant folding
-            if (left instanceof LiteralExpression && right instanceof LiteralExpression) {
-                LiteralExpression lLit = (LiteralExpression) left;
-                LiteralExpression rLit = (LiteralExpression) right;
-                Token lTok = lLit.getLiteral();
-                Token rTok = rLit.getLiteral();
+        // If no constant folding or simplification could be applied, we return the simplified inner
+        // statement...
+        return new UnaryExpression(unaryExpression.getOperator(), simplifiedInner);
+    }
 
-                if (lTok.getType() == TokenType.NUMERIC_LITERAL && rTok.getType() == TokenType.NUMERIC_LITERAL) {
-                    String op = be.getOperator();
-                    float lVal = Float.parseFloat(lTok.getValue());
-                    float rVal = Float.parseFloat(rTok.getValue());
 
-                    boolean allIntegers = !(lTok.getValue().contains(".") || rTok.getValue().contains("."));
-                    if (op.equals("+")) {
-                        float res = lVal + rVal;
-                        return new LiteralExpression(new Token(TokenType.NUMERIC_LITERAL, formatNumeric(res, allIntegers)));
-                    } else if (op.equals("-")) {
-                        float res = lVal - rVal;
-                        return new LiteralExpression(new Token(TokenType.NUMERIC_LITERAL, formatNumeric(res, allIntegers)));
-                    } else if (op.equals("*")) {
-                        float res = lVal * rVal;
-                        return new LiteralExpression(new Token(TokenType.NUMERIC_LITERAL, formatNumeric(res, allIntegers)));
-                    } else if (op.equals("/")) {
-                        if (rVal != 0) {
-                            float res = lVal / rVal;
-                            return new LiteralExpression(new Token(TokenType.NUMERIC_LITERAL, formatNumeric(res, allIntegers)));
-                        }
-                    } else if (isComparisonOp(op)) {
-                        int cmp = evaluateComparison(lVal, rVal, op);
-                        return new LiteralExpression(new Token(TokenType.NUMERIC_LITERAL, String.valueOf(cmp)));
-                    } else if (op.equals("||") || op.equals("&&")) {
-                        int lInt = (int)lVal;
-                        int rInt = (int)rVal;
-                        int logic = evaluateLogic(lInt, rInt, op);
-                        return new LiteralExpression(new Token(TokenType.NUMERIC_LITERAL, String.valueOf(logic)));
+    /**
+     * Simplifies a BinaryExpression
+     */
+    private static Expression simplifyBinaryExpression(BinaryExpression binaryExpression) {
+        Expression left = simplifyExpression(binaryExpression.getLeft());
+        Expression right = simplifyExpression(binaryExpression.getRight());
+
+        // Constant folding if both sides are literals. we recursively treat each side
+        // of the binary expression as something to eb simplified!
+        if (left instanceof LiteralExpression && right instanceof LiteralExpression) {
+            return foldBinaryExpression((LiteralExpression) left,
+              (LiteralExpression) right, binaryExpression.getOperator());
+        }
+
+        // otherwise if no simplifications can be made, we just return as is.
+        return new BinaryExpression(left, binaryExpression.getOperator(), right);
+    }
+
+    /**
+     * Attempt constant folding on a binary operation.
+     * We can split up binary expressions into arithmetic, or boolean. Here we handle both
+     */
+    private static Expression foldBinaryExpression(LiteralExpression leftLiteral,
+                                                   LiteralExpression rightOperation, String operator) {
+
+        Token leftToken = leftLiteral.getLiteral();
+        Token rightToken = rightOperation.getLiteral();
+        TokenType numeric = TokenType.NUMERIC_LITERAL;
+
+        if (leftToken.getType() == numeric && rightToken.getType() == numeric) {
+            float leftValue = Float.parseFloat(leftToken.getValue());
+            float rightValue = Float.parseFloat(rightToken.getValue());
+            boolean allIntegers = !(leftToken.getValue().contains(".") || rightToken.getValue().contains("."));
+
+            // Handle basic arithmetic operators
+            switch (operator) {
+                case "+":
+                    return numericLiteral(leftValue + rightValue, allIntegers);
+                case "-":
+                    return numericLiteral(leftValue - rightValue, allIntegers);
+                case "*":
+                    return numericLiteral(leftValue * rightValue, allIntegers);
+                case "/": // remember to handle div by 0 errors.
+                    if (rightValue != 0) {
+                        return numericLiteral(leftValue / rightValue, allIntegers );
                     }
-                }
+                    break;
+                default:
+                    break;
             }
 
-            return new BinaryExpression(left, be.getOperator(), right);
-        } else if (expr instanceof FunctionCallExpression) {
-            return expr;
+            // handle logical operators
+            if (isComparisonOp(operator)) {
+                boolean comparsion = evaluateComparison(leftValue, rightValue, operator);
+                return new LiteralExpression(new Token(TokenType.NUMERIC_LITERAL, String.valueOf(comparsion)));
+            }
+
+            // handle && and ||
+            if (operator.equals("||") || operator.equals("&&")) {
+                int leftInt = (int) leftValue;
+                int rightInt = (int) rightValue;
+                boolean logic = evaluateLogic(leftInt, rightInt, operator);
+                return new LiteralExpression(new Token(TokenType.NUMERIC_LITERAL, String. valueOf(logic)));
+            }
         }
-        return expr;
+
+        // again return if its not foldable at all
+        return new BinaryExpression(leftLiteral, operator, rightOperation);
     }
 
+    /**
+     * Create a numeric literal expression with proper integer or float format
+     */
+    private static Expression numericLiteral(float val, boolean allIntegers) {
+        return new LiteralExpression(new Token(TokenType.NUMERIC_LITERAL, formatNumeric(val, allIntegers)));
+    }
+
+
+    /**
+     * Format numeric value as integer if it is a whole number and allInt is true.
+     */
     private static String formatNumeric(float val, boolean allInt) {
-        if (allInt && val == (int)val) {
-            return String.valueOf((int)val);
-        } else {
-            return String.valueOf(val);
+        if (allInt && val == (int) val) {
+            return String.valueOf((int) val);
         }
+        return String.valueOf(val);
     }
 
-    private static Integer tryEvaluateCondition(Expression expr) {
-        if (expr instanceof LiteralExpression) {
-            LiteralExpression lit = (LiteralExpression) expr;
-            if (lit.getLiteral().getType() == TokenType.NUMERIC_LITERAL) {
-                float v = Float.parseFloat(lit.getLiteral().getValue());
-                return v == 0 ? 0 : 1;
+    /**
+     * Try to evaluate condition to a boolean if it's a numeric literal.
+     * Returns null if you can't even evaluate it
+     */
+    private static Boolean tryEvaluateCondition(Expression expression) {
+        if (expression instanceof LiteralExpression literalExpression) {
+
+            if (literalExpression.getLiteral().getType() == TokenType.NUMERIC_LITERAL) {
+                float numericValue = Float.parseFloat(literalExpression.getLiteral().getValue());
+                return numericValue != 0.0f;
             }
         }
+
         return null;
     }
 
+    /**
+     * Check if the given  operator is a comparison operator
+     */
     private static boolean isComparisonOp(String op) {
         return op.equals("==") || op.equals("!=")
           || op.equals(">") || op.equals("<")
           || op.equals(">=") || op.equals("<=");
     }
 
-    private static int evaluateComparison(float lVal, float rVal, String op) {
-        boolean res;
-        switch(op) {
-            case "==": res = (lVal == rVal); break;
-            case "!=": res = (lVal != rVal); break;
-            case ">": res = (lVal > rVal); break;
-            case "<": res = (lVal < rVal); break;
-            case ">=": res = (lVal >= rVal); break;
-            case "<=": res = (lVal <= rVal); break;
-            default: res = false;
-        }
-        return res ? 1 : 0;
+    /**
+     * Evaluate a comparison operation between two float values. returns true or false
+     */
+    private static boolean evaluateComparison(float leftValue, float rightValue, String operator) {
+        return switch (operator) {
+            case ">" -> (leftValue > rightValue);
+            case "<" -> (leftValue <  rightValue);
+            case ">=" -> (leftValue >= rightValue);
+            case "<=" -> (leftValue <= rightValue);
+            case "==" -> (leftValue == rightValue);
+            case "!=" -> (leftValue != rightValue);
+
+            default -> false;
+        };
     }
 
-    private static int evaluateLogic(int lVal, int rVal, String op) {
-        if (op.equals("||")) {
-            return (lVal != 0 || rVal != 0) ? 1 : 0;
-        } else {
-            // &&
-            return (lVal != 0 && rVal != 0) ? 1 : 0;
+
+    /**
+     * Evaluate logical operations (|| and &&)
+     */
+    private static boolean evaluateLogic(int leftValue, int rightValue, String operator) {
+        if (operator.equals("||")) {
+            return (leftValue != 0 || rightValue != 0);
         }
+        return (leftValue != 0 && rightValue != 0);
     }
 }
+
+
+
+
+

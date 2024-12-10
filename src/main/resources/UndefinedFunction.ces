@@ -1,0 +1,6 @@
+function main() {
+    int y = undefinedFunction(5); // 'undefinedFunction' not declared.
+    return 0;
+}
+
+main();

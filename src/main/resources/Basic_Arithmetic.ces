@@ -1,0 +1,8 @@
+function main() {
+    int a = 3 + 5;
+    float b = 10.0 / 2;
+    print(a);
+    print(b);
+    return 0;
+}
+main();

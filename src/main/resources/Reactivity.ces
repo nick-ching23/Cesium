@@ -1,0 +1,23 @@
+function main() {
+    Stream s;
+    setValue(s, 5);
+
+    Reactive r1 = s + 10;
+    Reactive r2 = s + 5;
+    Reactive r3 = s + 2;
+
+    print("Original Variables");
+    print(r1);
+    print(r2);
+    print(r3);
+
+    print("Update stream variable");
+    setValue(s, 3);
+    print(r1);
+    print(r2);
+    print(r3);
+
+    print("values of r1, r2 and r3 all changed by simply updating s");
+}
+
+main();

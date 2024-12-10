@@ -1,25 +1,25 @@
 package org.cesium;
 
+/**
+ * The ReactiveOps class provides static methods for performing arithmetic operations
+ * on Stream and Reactive values, returning Reactive results.
+ */
 public class ReactiveOps {
 
-    // Multiply a Stream by an int, returning a Reactive
-    public static Reactive multiply(Stream s, int val) {
-        return new ReactiveFromStream(s, x -> x == null ? null : x * val);
+    public static Reactive multiply(Stream stream, int value) {
+        return new ReactiveFromStream(stream, x -> x == null ? null : x * value);
     }
 
-    // Multiply a Reactive by an int
-    public static Reactive multiply(Reactive r, int val) {
-        return new ReactiveFromReactive(r, x -> x == null ? null : x * val);
+    public static Reactive multiply(Reactive reactive, int value) {
+        return new ReactiveFromReactive(reactive, x -> x == null ? null : x * value);
     }
 
-    // Add a Reactive and an int
-    public static Reactive add(Reactive r, int val) {
-        return new ReactiveFromReactive(r, x -> x == null ? null : x + val);
+    public static Reactive add(Reactive reactive, int value) {
+        return new ReactiveFromReactive(reactive, x -> x == null ? null : x + value);
     }
 
-    // Add a Stream and an int
-    public static Reactive add(Stream s, int val) {
-        return new ReactiveFromStream(s, x -> x == null ? null : x + val);
+    public static Reactive add(Stream stream, int value) {
+        return new ReactiveFromStream(stream, x -> x == null ? null : x + value);
     }
 
 

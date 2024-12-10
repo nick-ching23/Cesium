@@ -1,0 +1,13 @@
+function main() {
+    int y = 10;
+    y = z + 5; // 'z' is not declared, semantic error
+
+    if ( y )
+        print(y)
+    // Missing semicolon after print(y) and missing braces or else block
+    // This introduces a syntax error.
+
+    return;
+}
+
+main();

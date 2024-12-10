@@ -1,11 +1,15 @@
 package org.cesium;
 
+/**
+ * Utility methods for working with Streams and Reactive values.
+ * Includes printing reactive values and updating stream values.
+ */
 public class Util {
-    public static void printReactiveValue(Integer val) {
-        System.out.println(val == null ? "null" : val.toString());
+    public static void printReactiveValue(Integer value) {
+        System.out.println(value == null ? "null" : value.toString());
     }
 
-    public static void setValue(Stream s, int val) {
-        s.setValue(val);
+    public static void setValue(Stream stream, int value) {
+        stream.setValue(value);
     }
 }

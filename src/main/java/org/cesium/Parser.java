@@ -591,8 +591,7 @@ public class Parser {
         consumeTokenIfMatches(TokenType.DELIMITER, "(");
         Expression expr = parseExpression();
         consumeTokenIfMatches(TokenType.DELIMITER, ")");
-        checkAndConsume(TokenType.DELIMITER, ";");
-
+        consumeTokenIfMatches(TokenType.DELIMITER, ";");
         return new PrintStatement(expr);
     }
 
