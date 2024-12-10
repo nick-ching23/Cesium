@@ -9,7 +9,8 @@ Collaborators: Nick Ching (nc2935), Nick Thevenin (nit2111)
 
 Cesium is a custom-built programming language designed to natively support reactive programming. It empowers seamless data synchronization and execution flow. This phase of the project focuses on building the Lexical Analyzer, which tokenizes source code according to the Cesium language’s lexical grammar.
 
-
+## **Cesium Programming Language Demo:**
+[Demo Link](https://youtu.be/w7phCUSOAzc)
 
 ## **Current Progress**
    **9 Dec 2024:** Implemented the Code Generation phase and optimization. [Project is now complete] 
