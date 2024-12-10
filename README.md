@@ -63,10 +63,7 @@ Build the project:
 mvn package
 ```
 
-Running the project: 
-```bash
-java -cp target/classes org.cesium.Main src/main/resources/LATest_BasicStream.ces
-```
+At this point the compiler is ready to function.
 
 ## **Testing**
 
