@@ -5,7 +5,6 @@ Collaborators: Nick Ching (nc2935), Nick Thevenin (nit2111)
 
 
 
-
 ## About The Project
 
 Cesium is a custom-built programming language designed to natively support reactive programming. It empowers seamless data synchronization and execution flow. This phase of the project focuses on building the Lexical Analyzer, which tokenizes source code according to the Cesium language’s lexical grammar.
@@ -18,6 +17,10 @@ Cesium is a custom-built programming language designed to natively support react
    **12 Nov 2024:** Completed the Parser. Please refer to the bottom of this document for an explanation of our grammar
    
    **15 Oct 2024:** Completed Lexical Analyzer (tokenizing source code into Lexemes)
+
+## **How does Cesium Compile?**
+
+At its core, Cesium's compiler is written and executing using Java. This compiler takes Cesium Code, converts it to Java Byte Code directly and executes that byte code using the Java virtual machine. As a result, this code is operable on any machine so long as the JVM is installed. This was an incredibly important component of the project. 
 
 ---
 
@@ -189,3 +192,8 @@ CodeBlock -> '{' StatementList '}' | '{' '}'
 Our solution implement a recursive descent parser with LL(1) approach. 
 
 
+## A note on Cesium Reactivity
+The current implmentation of reactivity is not fully fleshed out due to the time constraint of this project. As it stands you are able to create a Stream variable which receives continuous data, and a Reactive variable which subscribes to a Stream. Whenever a stream updates a value, so do all of the reactive variables. 
+
+I understand that this is an incredibly bare bones implementation, but it is suitable for the purposes of this project. Please refer to test case:
+src/main/resources/Reactivity.ces for an example of reactivity has been implemnted here. 
