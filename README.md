@@ -13,18 +13,11 @@ Cesium is a custom-built programming language designed to natively support react
 
 
 ## **Current Progress**
+   **9 Dec 2024:** Implemented the Code Generation phase and optimization. [Project is now complete] 
+
    **12 Nov 2024:** Completed the Parser. Please refer to the bottom of this document for an explanation of our grammar
    
    **15 Oct 2024:** Completed Lexical Analyzer (tokenizing source code into Lexemes)
-
-
-
-
-## **Current Functionality ##
-- Lexical Analyzer for tokenizing source code
-- Support for keywords, operators, identifiers, numeric literals, string literals, boolean literals, and comments.
-- Exception handling for various kinds of lexical errors.
-
 
 ---
 
@@ -84,6 +77,11 @@ Running Tests for lexical analyzer:
 Running Tests for parser:
 ```bash
 ./parse_test_script.sh
+```
+
+Running Cesium code:
+```bash
+./cesiusm.sh src/main/resources/<cesium_file>.ces MyCesiumProgram
 ```
 ---
 
