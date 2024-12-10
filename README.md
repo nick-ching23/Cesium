@@ -60,7 +60,7 @@ mvn clean install
 
 Build the project: 
 ```bash
-mvn compile
+mvn package
 ```
 
 Running the project: 
